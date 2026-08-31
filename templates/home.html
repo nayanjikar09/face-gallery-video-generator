@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Gallery Studio{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-house"></i> Dashboard</h1>
+    <p class="lead" style="color: #aaa;">Welcome to Face Gallery & Video Generator Studio</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-3" style="background: #1a1a2e; border: 1px solid rgba(108,99,255,0.15);">
+            <div class="card-body">
+                <i class="bi bi-people" style="font-size:2.5rem;color:#6C63FF;"></i>
+                <h3 class="mt-2" style="color: #fff; font-weight: 700;">{{ gallery_data.stats.total_persons|default(0) }}</h3>
+                <p style="color: #888; margin: 0;">People</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3" style="background: #1a1a2e; border: 1px solid rgba(0,184,148,0.15);">
+            <div class="card-body">
+                <i class="bi bi-images" style="font-size:2.5rem;color:#00B894;"></i>
+                <h3 class="mt-2" style="color: #fff; font-weight: 700;">{{ total_images }}</h3>
+                <p style="color: #888; margin: 0;">Images</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3" style="background: #1a1a2e; border: 1px solid rgba(255,165,0,0.15);">
+            <div class="card-body">
+                <i class="bi bi-film" style="font-size:2.5rem;color:#FFA500;"></i>
+                <h3 class="mt-2" style="color: #fff; font-weight: 700;">{{ total_videos }}</h3>
+                <p style="color: #888; margin: 0;">Videos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3" style="background: #1a1a2e; border: 1px solid rgba(167,139,250,0.15);">
+            <div class="card-body">
+                <i class="bi bi-folder" style="font-size:2.5rem;color:#a78bfa;"></i>
+                <h3 class="mt-2" style="color: #fff; font-weight: 700;">{{ total_templates }}</h3>
+                <p style="color: #888; margin: 0;">Templates</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card" style="background: #1a1a2e; border: 1px solid rgba(108,99,255,0.1);">
+            <div class="card-header" style="background: rgba(108,99,255,0.05); border-bottom: 1px solid rgba(108,99,255,0.1); color: #fff;">
+                <span><i class="bi bi-clock-history" style="color: #6C63FF;"></i> Recent People</span>
+                <a href="{{ url_for('people_page') }}" style="color: #6C63FF; text-decoration: none;">View All →</a>
+            </div>
+            <div class="card-body">
+                {% set persons = gallery_data.persons|default([]) %}
+                {% if persons %}
+                    {% for person in persons[:6] %}
+                        <div class="d-flex align-items-center gap-3 p-2" 
+                             style="border-bottom:1px solid rgba(108,99,255,0.05);cursor:pointer;"
+                             onclick="window.location.href='/person/{{ person.id }}'">
+                            <img src="/gallery_data/thumbnails/{{ person.thumbnail|default('default.jpg') }}" 
+                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #6C63FF;background:#0f0f1a;">
+                            <div>
+                                <div style="font-weight:600; color: #fff;">Person #{{ person.id }}</div>
+                                <div style="font-size:0.8rem; color: #888;">
+                                    {{ person.media_count|default(0) }} media · {{ person.face_count|default(0) }} faces
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4" style="color: #666;">
+                        <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:8px;color: #444;"></i>
+                        <p style="color: #888;">No people found</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card" style="background: #1a1a2e; border: 1px solid rgba(108,99,255,0.1);">
+            <div class="card-header" style="background: rgba(108,99,255,0.05); border-bottom: 1px solid rgba(108,99,255,0.1); color: #fff;">
+                <span><i class="bi bi-folder" style="color: #6C63FF;"></i> Recent Templates</span>
+                <a href="{{ url_for('templates_page') }}" style="color: #6C63FF; text-decoration: none;">View All →</a>
+            </div>
+            <div class="card-body">
+                {% if templates %}
+                    {% for template in templates[:6] %}
+                        <div class="d-flex justify-content-between align-items-center p-2" 
+                             style="border-bottom:1px solid rgba(108,99,255,0.05);">
+                            <div>
+                                <div style="font-weight:600; color: #fff;">
+                                    <i class="bi bi-folder-fill" style="color: #6C63FF;"></i> {{ template.name }}
+                                </div>
+                                <div style="font-size:0.8rem; color: #888;">
+                                    {{ template.created }}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="badge {% if template.has_starting %}" style="background: rgba(0,184,148,0.2); color: #00B894; padding: 4px 10px;{% else %}" style="background: rgba(220,53,69,0.2); color: #dc3545; padding: 4px 10px;{% endif %}">
+                                    {{ '✓' if template.has_starting else '✗' }}
+                                </span>
+                                <span class="badge {% if template.has_ending %}" style="background: rgba(0,184,148,0.2); color: #00B894; padding: 4px 10px;{% else %}" style="background: rgba(220,53,69,0.2); color: #dc3545; padding: 4px 10px;{% endif %}">
+                                    {{ '✓' if template.has_ending else '✗' }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4" style="color: #666;">
+                        <i class="bi bi-folder" style="font-size:2rem;display:block;margin-bottom:8px;color: #444;"></i>
+                        <p style="color: #888;">No templates found</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Templates - Gallery Studio{% endblock %}
+
+{% block extra_css %}
+<style>
+    .template-card {
+        background: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(108,99,255,0.1);
+        transition: all 0.3s;
+        padding: 20px;
+    }
+    .template-card:hover {
+        transform: translateY(-5px);
+        border-color: #6C63FF;
+        box-shadow: 0 10px 30px rgba(108,99,255,0.15);
+    }
+    .template-card .template-name {
+        color: #6C63FF;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .template-card .template-date {
+        color: #888;
+        font-size: 0.8rem;
+    }
+    .template-card .template-status {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+    }
+    .template-card .template-status .badge {
+        padding: 4px 12px;
+        font-size: 0.7rem;
+        border-radius: 12px;
+    }
+    .template-card .template-status .badge.success {
+        background: rgba(0,184,148,0.2);
+        color: #00B894;
+        border: 1px solid rgba(0,184,148,0.2);
+    }
+    .template-card .template-status .badge.warning {
+        background: rgba(255,165,0,0.2);
+        color: #FFA500;
+        border: 1px solid rgba(255,165,0,0.2);
+    }
+    .template-card .template-status .badge.danger {
+        background: rgba(220,53,69,0.2);
+        color: #dc3545;
+        border: 1px solid rgba(220,53,69,0.2);
+    }
+    .template-card .template-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+    .template-card .template-actions .btn {
+        padding: 5px 16px;
+        font-size: 0.8rem;
+        border-radius: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h1><i class="bi bi-folder"></i> Templates</h1>
+            <p class="lead">Manage your video templates</p>
+        </div>
+        <!-- FIX: Use template.create_template for Blueprint route -->
+        <a href="{{ url_for('template.create_template') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Template
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% if templates %}
+        {% for template in templates %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="template-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="template-name">
+                            <i class="bi bi-folder-fill"></i> {{ template.name }}
+                        </div>
+                        <div class="template-date">{{ template.created }}</div>
+                    </div>
+                    
+                    <div class="template-status">
+                        <span class="badge {% if template.has_starting %}success{% else %}danger{% endif %}">
+                            {% if template.has_starting %}✅{% else %}❌{% endif %} Starting
+                        </span>
+                        <span class="badge {% if template.has_ending %}success{% else %}danger{% endif %}">
+                            {% if template.has_ending %}✅{% else %}❌{% endif %} Ending
+                        </span>
+                        <span class="badge {% if template.has_music %}success{% else %}warning{% endif %}">
+                            {% if template.has_music %}✅{% else %}⚠️{% endif %} Music
+                        </span>
+                        <span class="badge {% if template.has_captions %}success{% else %}warning{% endif %}">
+                            {% if template.has_captions %}✅{% else %}⚠️{% endif %} Captions
+                        </span>
+                    </div>
+                    
+                    <div class="template-actions">
+                        <!-- FIX: Use template.view_template for Blueprint route -->
+                        <a href="{{ url_for('template.view_template', template_name=template.name) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <!-- FIX: Use template.edit_template for Blueprint route -->
+                        <a href="{{ url_for('template.edit_template', template_name=template.name) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <button class="btn btn-outline-danger" onclick="deleteTemplate('{{ template.name }}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="empty-state">
+                <i>📁</i>
+                <h3>No Templates Yet</h3>
+                <p>Create a template to start generating videos</p>
+                <!-- FIX: Use template.create_template for Blueprint route -->
+                <a href="{{ url_for('template.create_template') }}" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Create Template
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger"></i> Delete Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this template? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" action="">
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteTemplate(templateName) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    // FIX: Use correct URL
+    form.action = `/template/${templateName}/delete`;
+    modal.show();
+}
+</script>
+{% endblock %}

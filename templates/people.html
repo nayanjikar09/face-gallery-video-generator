@@ -1,0 +1,734 @@
+{% extends "base.html" %}
+
+{% block title %}People - Gallery Studio{% endblock %}
+
+{% block extra_css %}
+<style>
+    .person-card {
+        background: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid rgba(108,99,255,0.1);
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        padding: 20px;
+        position: relative;
+    }
+    .person-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(108,99,255,0.3);
+        box-shadow: 0 10px 30px rgba(108,99,255,0.15);
+    }
+    .person-card.selected {
+        border-color: #6C63FF;
+        box-shadow: 0 0 30px rgba(108,99,255,0.2);
+    }
+    .person-card img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #6C63FF;
+        margin-bottom: 12px;
+        background: #0f0f1a;
+    }
+    .person-card .person-id {
+        color: #6C63FF;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .person-card .person-stats {
+        color: #888;
+        font-size: 0.85rem;
+        margin-top: 4px;
+    }
+    .person-card .person-stats span {
+        margin: 0 8px;
+    }
+    .person-card .person-badge {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+    .person-card .person-badge.has-media {
+        background: rgba(0,184,148,0.2);
+        color: #00B894;
+    }
+    .person-card .person-badge.no-media {
+        background: rgba(220,53,69,0.2);
+        color: #dc3545;
+    }
+    .person-card .person-checkbox {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        accent-color: #6C63FF;
+        cursor: pointer;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .person-card:hover .person-checkbox,
+    .person-card.selected .person-checkbox {
+        opacity: 1;
+    }
+    .person-card .selection-indicator {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        background: #6C63FF;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9;
+        pointer-events: none;
+    }
+    .person-card.selected .selection-indicator {
+        display: flex;
+    }
+    .person-card .selection-indicator i {
+        color: white;
+        font-size: 0.9rem;
+    }
+    
+    .search-box {
+        max-width: 400px;
+        margin-bottom: 20px;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 10px 20px;
+        border-radius: 25px;
+        border: 1px solid rgba(108,99,255,0.2);
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+    .search-box input:focus {
+        outline: none;
+        border-color: #6C63FF;
+        box-shadow: 0 0 20px rgba(108,99,255,0.1);
+    }
+    .search-box input::placeholder { color: #555; }
+    
+    .selection-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #1a1a2e;
+        border-top: 2px solid #6C63FF;
+        padding: 16px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        z-index: 100;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+    }
+    .selection-bar.active {
+        transform: translateY(0);
+    }
+    .selection-bar .selected-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #aaa;
+        font-size: 0.9rem;
+        flex: 1;
+    }
+    .selection-bar .selected-info strong {
+        color: #6C63FF;
+        font-size: 1.1rem;
+    }
+    .selection-bar .selected-info .file-count {
+        color: #888;
+        font-size: 0.8rem;
+    }
+    .selection-bar .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .selection-bar .actions button {
+        padding: 8px 22px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .selection-bar .actions .btn-select-all {
+        background: rgba(108,99,255,0.15);
+        color: #6C63FF;
+        border: 1px solid rgba(108,99,255,0.15);
+    }
+    .selection-bar .actions .btn-select-all:hover {
+        background: rgba(108,99,255,0.25);
+    }
+    .selection-bar .actions .btn-clear {
+        background: rgba(220,53,69,0.15);
+        color: #dc3545;
+        border: 1px solid rgba(220,53,69,0.15);
+    }
+    .selection-bar .actions .btn-clear:hover {
+        background: rgba(220,53,69,0.25);
+    }
+    .selection-bar .actions .btn-generate {
+        background: linear-gradient(135deg, #FF6B35, #FF4500);
+        color: #fff;
+        padding: 8px 28px;
+    }
+    .selection-bar .actions .btn-generate:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255,69,0,0.3);
+    }
+    .selection-bar .actions .btn-generate:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .selection-bar .template-select {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .selection-bar .template-select label {
+        color: #aaa;
+        font-size: 0.85rem;
+    }
+    .selection-bar .template-select select {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(108,99,255,0.2);
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        font-size: 0.85rem;
+        min-width: 150px;
+    }
+    .selection-bar .template-select select:focus {
+        outline: none;
+        border-color: #6C63FF;
+    }
+    .selection-bar .template-select select option {
+        background: #1a1a2e;
+        color: #fff;
+    }
+    
+    /* Progress overlay for batch generation */
+    .progress-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        padding: 20px;
+    }
+    .progress-overlay.active {
+        display: flex;
+    }
+    .progress-overlay .progress-box {
+        background: #1a1a2e;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        border: 1px solid rgba(108,99,255,0.2);
+        text-align: center;
+    }
+    .progress-overlay .progress-box h3 {
+        color: #6C63FF;
+        margin-bottom: 20px;
+    }
+    .progress-overlay .progress-box .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #0f0f1a;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+    .progress-overlay .progress-box .progress-bar .fill {
+        height: 100%;
+        background: linear-gradient(90deg, #6C63FF, #a78bfa);
+        width: 0%;
+        transition: width 0.5s ease;
+        border-radius: 4px;
+    }
+    .progress-overlay .progress-box .status-text {
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    .progress-overlay .progress-box .progress-detail {
+        color: #666;
+        font-size: 0.8rem;
+        margin-top: 8px;
+    }
+    .progress-overlay .progress-box .close-btn {
+        margin-top: 20px;
+        padding: 8px 30px;
+        background: #6C63FF;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: none;
+    }
+    .progress-overlay .progress-box .close-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(108,99,255,0.3);
+    }
+    .progress-overlay .progress-box .close-btn.show {
+        display: inline-block;
+    }
+    
+    @media (max-width: 768px) {
+        .selection-bar {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 12px 16px;
+        }
+        .selection-bar .actions {
+            justify-content: center;
+        }
+        .selection-bar .template-select {
+            justify-content: center;
+        }
+        .selection-bar .selected-info {
+            justify-content: center;
+        }
+        .person-card .person-checkbox {
+            opacity: 1;
+        }
+        .progress-overlay .progress-box {
+            padding: 20px;
+            margin: 0 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h1><i class="bi bi-people"></i> People Gallery</h1>
+            <p class="lead">Click a person to view their media, or use Select Mode to generate videos</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="toggleSelectMode()">
+                <i class="bi bi-check-square"></i> <span id="selectModeBtn">Select Mode</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="search-box">
+    <input type="text" id="searchInput" placeholder="🔍 Search people by ID...">
+</div>
+
+<div class="grid" id="peopleGrid">
+    <!-- Rendered by JavaScript -->
+</div>
+
+<!-- Selection Bar -->
+<div class="selection-bar" id="selectionBar">
+    <div class="selected-info">
+        <span>📌 Selected: <strong id="selectedCount">0</strong></span>
+        <span class="file-count" id="peopleCountDetails"></span>
+    </div>
+    <div class="template-select">
+        <label for="batchTemplateSelect">Template:</label>
+        <select id="batchTemplateSelect">
+            <option value="">Loading templates...</option>
+        </select>
+    </div>
+    <div class="actions">
+        <button class="btn-select-all" onclick="selectAllVisible()">☑ Select All</button>
+        <button class="btn-clear" onclick="clearSelection()">✕ Clear</button>
+        <button class="btn-generate" id="generateBtn" onclick="generateVideos()" disabled>
+            <i class="bi bi-play-circle"></i> Generate Videos
+        </button>
+    </div>
+</div>
+
+<!-- Progress Overlay for Batch Generation -->
+<div class="progress-overlay" id="progressOverlay">
+    <div class="progress-box">
+        <h3><i class="bi bi-gear"></i> Generating Videos</h3>
+        <div class="status-text" id="progressStatus">Preparing generation...</div>
+        <div class="progress-bar">
+            <div class="fill" id="progressFill"></div>
+        </div>
+        <div class="progress-detail" id="progressDetail">0 / 0 completed</div>
+        <button class="close-btn" id="progressCloseBtn" onclick="closeProgress()">
+            <i class="bi bi-check-circle"></i> Done
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let galleryData = { persons: [] };
+    let searchQuery = '';
+    let selectedPeople = [];
+    let templates = [];
+    let isSelectMode = false;
+
+    // Load templates
+    async function loadTemplates() {
+        try {
+            // Try main endpoint first
+            let response = await fetch('/api/templates');
+            let data = await response.json();
+            templates = data.templates || [];
+            
+            // If no templates found, try the blueprint endpoint
+            if (templates.length === 0) {
+                response = await fetch('/template/api/templates');
+                data = await response.json();
+                templates = data.templates || [];
+            }
+            
+            const select = document.getElementById('batchTemplateSelect');
+            select.innerHTML = '<option value="">Select template...</option>';
+            templates.forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.name;
+                option.textContent = t.name;
+                select.appendChild(option);
+            });
+            console.log('✅ Templates loaded:', templates.length);
+        } catch (error) {
+            console.error('❌ Error loading templates:', error);
+            const select = document.getElementById('batchTemplateSelect');
+            select.innerHTML = '<option value="">No templates available</option>';
+        }
+    }
+
+    async function loadPeople() {
+        try {
+            const response = await fetch('/api/gallery');
+            galleryData = await response.json();
+            renderPeople();
+        } catch (error) {
+            console.error('Error loading people:', error);
+            document.getElementById('peopleGrid').innerHTML = `
+                <div class="empty-state">
+                    <i>😕</i>
+                    <h3>Error loading people</h3>
+                    <p>Please make sure the gallery data exists</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderPeople() {
+        const grid = document.getElementById('peopleGrid');
+        let persons = galleryData.persons || [];
+        
+        if (searchQuery) {
+            persons = persons.filter(p => String(p.id).includes(searchQuery));
+        }
+        
+        if (persons.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <i>👤</i>
+                    <h3>No people found</h3>
+                    <p>${searchQuery ? 'Try adjusting your search' : 'Upload images or videos to detect faces'}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        grid.innerHTML = persons.map(p => {
+            const mediaCount = p.media_count || 0;
+            const faceCount = p.face_count || 0;
+            const hasMedia = mediaCount > 0;
+            const isSelected = selectedPeople.includes(p.id);
+            
+            return `
+                <div class="person-card ${isSelected ? 'selected' : ''}" 
+                     data-person-id="${p.id}"
+                     onclick="goToPersonDetail(${p.id})">
+                    <img src="/gallery_data/thumbnails/${p.thumbnail || 'default.jpg'}" 
+                         alt="Person ${p.id}"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%231a1a2e%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%236C63FF%22 font-size=%2248%22%3E👤%3C/text%3E%3C/svg%3E'">
+                    <div class="person-id">Person #${p.id}</div>
+                    <div class="person-stats">
+                        <span>🖼️ ${mediaCount} media</span>
+                        <span>👤 ${faceCount} faces</span>
+                    </div>
+                    <span class="person-badge ${hasMedia ? 'has-media' : 'no-media'}">
+                        ${hasMedia ? '✅ Has Media' : '❌ No Media'}
+                    </span>
+                    <input type="checkbox" class="person-checkbox" 
+                           ${isSelected ? 'checked' : ''} 
+                           onclick="event.stopPropagation(); togglePerson(${p.id})">
+                    <div class="selection-indicator">
+                        <i class="bi bi-check"></i>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        updateSelectionUI();
+    }
+
+    // Go to person detail page
+    function goToPersonDetail(personId) {
+        window.location.href = `/person/${personId}`;
+    }
+
+    function togglePerson(personId) {
+        const index = selectedPeople.indexOf(personId);
+        if (index > -1) {
+            selectedPeople.splice(index, 1);
+        } else {
+            // Only add if person has media
+            const person = galleryData.persons.find(p => p.id === personId);
+            if (person && (person.media_count || 0) > 0) {
+                selectedPeople.push(personId);
+            } else {
+                showToast('This person has no media to generate videos from', 'error');
+                return;
+            }
+        }
+        renderPeople();
+        updateSelectionUI();
+    }
+
+    function toggleSelectMode() {
+        isSelectMode = !isSelectMode;
+        document.getElementById('selectModeBtn').textContent = isSelectMode ? 'Exit Select Mode' : 'Select Mode';
+        if (!isSelectMode) {
+            clearSelection();
+        }
+        // Toggle checkbox visibility
+        document.querySelectorAll('.person-checkbox').forEach(cb => {
+            cb.style.opacity = isSelectMode ? '1' : '0';
+        });
+    }
+
+    function selectAllVisible() {
+        const visibleCards = document.querySelectorAll('#peopleGrid .person-card');
+        visibleCards.forEach(card => {
+            const personId = parseInt(card.dataset.personId);
+            const person = galleryData.persons.find(p => p.id === personId);
+            if (person && (person.media_count || 0) > 0) {
+                if (!selectedPeople.includes(personId)) {
+                    selectedPeople.push(personId);
+                }
+            }
+        });
+        renderPeople();
+        updateSelectionUI();
+        showToast(`Selected ${selectedPeople.length} people`, 'success');
+    }
+
+    function clearSelection() {
+        selectedPeople = [];
+        renderPeople();
+        updateSelectionUI();
+    }
+
+    function updateSelectionUI() {
+        const count = selectedPeople.length;
+        document.getElementById('selectedCount').textContent = count;
+        
+        const details = document.getElementById('peopleCountDetails');
+        if (count > 0) {
+            details.textContent = `(${count} people selected)`;
+        } else {
+            details.textContent = '';
+        }
+        
+        const generateBtn = document.getElementById('generateBtn');
+        const selectionBar = document.getElementById('selectionBar');
+        
+        generateBtn.disabled = count === 0;
+        
+        if (count > 0) {
+            selectionBar.classList.add('active');
+        } else {
+            selectionBar.classList.remove('active');
+        }
+    }
+
+    // UPDATED: generateVideos function with auto-download
+    async function generateVideos() {
+        if (selectedPeople.length === 0) {
+            showToast('Please select at least one person', 'error');
+            return;
+        }
+        
+        const templateName = document.getElementById('batchTemplateSelect').value;
+        if (!templateName) {
+            showToast('Please select a template first', 'error');
+            return;
+        }
+        
+        // Show progress overlay
+        const overlay = document.getElementById('progressOverlay');
+        const status = document.getElementById('progressStatus');
+        const fill = document.getElementById('progressFill');
+        const detail = document.getElementById('progressDetail');
+        const closeBtn = document.getElementById('progressCloseBtn');
+        
+        overlay.classList.add('active');
+        closeBtn.classList.remove('show');
+        fill.style.width = '0%';
+        
+        const total = selectedPeople.length;
+        let completed = 0;
+        let failed = 0;
+        let results = [];
+        
+        for (let i = 0; i < total; i++) {
+            const personId = selectedPeople[i];
+            const person = galleryData.persons.find(p => p.id === personId);
+            
+            status.textContent = `Generating video for Person #${personId} (${i + 1}/${total})...`;
+            detail.textContent = `${completed} completed, ${failed} failed`;
+            fill.style.width = `${((i) / total) * 100}%`;
+            
+            try {
+                // Get person's media
+                const mediaResponse = await fetch(`/api/person/${personId}/media`);
+                const mediaData = await mediaResponse.json();
+                
+                const images = mediaData.images || [];
+                const videos = mediaData.videos || [];
+                
+                if (images.length === 0 && videos.length === 0) {
+                    results.push({
+                        person_id: personId,
+                        success: false,
+                        error: 'No media found'
+                    });
+                    failed++;
+                    continue;
+                }
+                
+                // Generate video for this person - the response will be the video file directly
+                const generateResponse = await fetch('/video/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        person_id: personId,
+                        template_name: templateName,
+                        images: images,
+                        videos: videos
+                    })
+                });
+                
+                if (generateResponse.ok) {
+                    // Get the video blob and download it
+                    const blob = await generateResponse.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Person_${personId}_${templateName}_${new Date().toISOString().replace(/[:.]/g, '').slice(0, 15)}.mp4`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    results.push({
+                        person_id: personId,
+                        success: true
+                    });
+                    completed++;
+                    console.log(`✅ Downloaded video for Person #${personId}`);
+                } else {
+                    const errorData = await generateResponse.json();
+                    results.push({
+                        person_id: personId,
+                        success: false,
+                        error: errorData.error || 'Generation failed'
+                    });
+                    failed++;
+                }
+            } catch (error) {
+                console.error(`Error generating for person ${personId}:`, error);
+                results.push({
+                    person_id: personId,
+                    success: false,
+                    error: error.message
+                });
+                failed++;
+            }
+            
+            detail.textContent = `${completed} completed, ${failed} failed`;
+            fill.style.width = `${((i + 1) / total) * 100}%`;
+        }
+        
+        // Show completion
+        status.textContent = `✅ Generation complete! ${completed} successful, ${failed} failed`;
+        fill.style.width = '100%';
+        detail.textContent = `All ${total} people processed`;
+        closeBtn.classList.add('show');
+        
+        // Show summary
+        if (failed > 0) {
+            showToast(`${failed} person(s) failed to generate. Check console for details.`, 'error');
+        } else {
+            showToast(`✅ All ${total} videos generated and downloaded successfully!`, 'success');
+        }
+        
+        // Log results
+        console.log('Batch generation results:', results);
+    }
+
+    function closeProgress() {
+        document.getElementById('progressOverlay').classList.remove('active');
+        // Refresh the page to show new videos
+        window.location.reload();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+        searchQuery = this.value.trim();
+        renderPeople();
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPeople();
+        loadTemplates();
+        // Check for auto_generate parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_generate') === 'true') {
+            const template = urlParams.get('template');
+            if (template) {
+                document.getElementById('batchTemplateSelect').value = template;
+            }
+        }
+    });
+</script>
+{% endblock %}

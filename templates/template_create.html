@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Create Template - Gallery Studio{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 style="color: #fff;"><i class="bi bi-plus-circle" style="color: #6C63FF;"></i> Create Template</h1>
+    <p style="color: #aaa;">Configure your video template with assets</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card" style="background: #1a1a2e; border: 1px solid rgba(108,99,255,0.1);">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('template.create_template') }}" enctype="multipart/form-data">
+                    <!-- Template Name -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" style="color: #fff;">
+                            <i class="bi bi-tag" style="color: #6C63FF;"></i> Template Name
+                        </label>
+                        <input type="text" class="form-control" 
+                               style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                               name="template_name" placeholder="Enter template name (e.g., 'my_template')" required>
+                        <div style="color: #666; font-size: 0.85rem; margin-top: 4px;">Use only letters, numbers, underscores, and hyphens</div>
+                    </div>
+
+                    <hr style="border-color: rgba(108,99,255,0.1);">
+
+                    <!-- Starting & Ending Assets -->
+                    <h5 style="color: #fff; margin-bottom: 12px;"><i class="bi bi-play-circle" style="color: #6C63FF;"></i> Starting & Ending Assets</h5>
+                    <div style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.15); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #aaa;">
+                        <i class="bi bi-info-circle" style="color: #6C63FF;"></i> These can be either images or videos. The system will automatically detect and handle both.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="color: #ccc; font-weight: 500;">
+                                <i class="bi bi-play-btn" style="color: #00B894;"></i> Starting Asset
+                                <span style="color: #666; font-size: 0.8rem;">(Image or Video)</span>
+                            </label>
+                            <input type="file" class="form-control" 
+                                   style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                                   name="starting_asset" accept=".mp4,.mov,.avi,.mkv,.webm,.jpg,.jpeg,.png,.webp,.bmp,.gif">
+                            <div style="color: #666; font-size: 0.8rem; margin-top: 4px;">File will be renamed to "starting.*"</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color: #ccc; font-weight: 500;">
+                                <i class="bi bi-stop-btn" style="color: #dc3545;"></i> Ending Asset
+                                <span style="color: #666; font-size: 0.8rem;">(Image or Video)</span>
+                            </label>
+                            <input type="file" class="form-control" 
+                                   style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                                   name="ending_asset" accept=".mp4,.mov,.avi,.mkv,.webm,.jpg,.jpeg,.png,.webp,.bmp,.gif">
+                            <div style="color: #666; font-size: 0.8rem; margin-top: 4px;">File will be renamed to "ending.*"</div>
+                        </div>
+                    </div>
+
+                    <hr style="border-color: rgba(108,99,255,0.1); margin-top: 20px;">
+
+                    <!-- Music & Captions -->
+                    <h5 style="color: #fff; margin-bottom: 12px;"><i class="bi bi-music-note" style="color: #6C63FF;"></i> Audio & Captions</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="color: #ccc; font-weight: 500;">
+                                <i class="bi bi-music-note" style="color: #FFA500;"></i> Music
+                                <span style="color: #666; font-size: 0.8rem;">(Optional)</span>
+                            </label>
+                            <input type="file" class="form-control" 
+                                   style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                                   name="music_file" accept=".mp3,.wav,.m4a,.aac">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color: #ccc; font-weight: 500;">
+                                <i class="bi bi-card-text" style="color: #17a2b8;"></i> Captions
+                                <span style="color: #666; font-size: 0.8rem;">(Optional - TXT)</span>
+                            </label>
+                            <input type="file" class="form-control" 
+                                   style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                                   name="captions_file" accept=".txt">
+                        </div>
+                    </div>
+
+                    <hr style="border-color: rgba(108,99,255,0.1); margin-top: 20px;">
+
+                    <!-- Extra Assets -->
+                    <h5 style="color: #fff; margin-bottom: 12px;">
+                        <i class="bi bi-plus-square" style="color: #6C63FF;"></i> Extra Assets
+                        <span style="color: #666; font-size: 0.85rem;">(Upload multiple files at once)</span>
+                    </h5>
+                    <p style="color: #888;">These assets will be randomly placed throughout your video.</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="color: #ccc; font-weight: 500;">
+                                <i class="bi bi-image" style="color: #6C63FF;"></i> Extra Images
+                                <span style="background: #6C63FF; color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; margin-left: 4px;">Multiple</span>
+                            </label>
+                            <input type="file" class="form-control" 
+                                   style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                                   name="extra_images" accept=".jpg,.jpeg,.png,.webp,.bmp,.gif" multiple>
+                            <div style="color: #666; font-size: 0.8rem; margin-top: 4px;">Select multiple images (hold Ctrl/Cmd to select multiple)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color: #ccc; font-weight: 500;">
+                                <i class="bi bi-film" style="color: #FFA500;"></i> Extra Videos
+                                <span style="background: #6C63FF; color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; margin-left: 4px;">Multiple</span>
+                            </label>
+                            <input type="file" class="form-control" 
+                                   style="background: #0f0f1a; color: #fff; border: 1px solid rgba(108,99,255,0.2);"
+                                   name="extra_videos" accept=".mp4,.mov,.avi,.mkv,.webm" multiple>
+                            <div style="color: #666; font-size: 0.8rem; margin-top: 4px;">Select multiple videos (hold Ctrl/Cmd to select multiple)</div>
+                        </div>
+                    </div>
+
+                    <hr style="border-color: rgba(108,99,255,0.1); margin-top: 20px;">
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #6C63FF, #a78bfa); border: none; color: #fff; font-weight: 600; padding: 12px; border-radius: 8px;">
+                            <i class="bi bi-plus-circle"></i> Create Template
+                        </button>
+                        <a href="{{ url_for('template.templates') }}" class="btn" style="background: transparent; border: 1px solid rgba(108,99,255,0.2); color: #aaa; padding: 10px; border-radius: 8px; text-align: center; text-decoration: none;">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

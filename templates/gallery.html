@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Gallery</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+        
+        /* ===== HEADER ===== */
+        .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px; border-bottom: 2px solid #6C63FF; position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(45deg, #6C63FF, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header .stats { display: flex; gap: 15px; flex-wrap: wrap; }
+        .header .stats span { background: rgba(108,99,255,0.15); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #ccc; }
+        .header .stats span strong { color: #6C63FF; }
+        
+        /* ===== TABS ===== */
+        .tabs { display: flex; gap: 5px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 4px; }
+        .tab-btn { padding: 8px 20px; border: none; background: transparent; color: #888; cursor: pointer; border-radius: 8px; font-size: 0.9rem; transition: all 0.3s; font-weight: 500; }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active { background: #6C63FF; color: #fff; }
+        
+        /* ===== SEARCH ===== */
+        .search-container { max-width: 300px; width: 100%; }
+        .search-container input { width: 100%; padding: 8px 16px; border-radius: 25px; border: 1px solid rgba(108,99,255,0.2); background: rgba(255,255,255,0.05); color: #fff; font-size: 0.9rem; transition: all 0.3s; }
+        .search-container input:focus { outline: none; border-color: #6C63FF; box-shadow: 0 0 20px rgba(108,99,255,0.1); }
+        .search-container input::placeholder { color: #555; }
+        
+        /* ===== MAIN ===== */
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        
+        /* ===== CARDS ===== */
+        .card { background: #1a1a2e; border-radius: 12px; overflow: hidden; border: 1px solid rgba(108,99,255,0.1); cursor: pointer; transition: all 0.3s ease; position: relative; }
+        .card:hover { transform: translateY(-5px); border-color: #6C63FF; box-shadow: 0 10px 30px rgba(108,99,255,0.15); }
+        .card .card-image { width: 100%; aspect-ratio: 1; object-fit: cover; background: #0f0f1a; }
+        .card .card-image.video-thumb { aspect-ratio: 16/9; }
+        .card .card-info { padding: 12px 15px; text-align: center; }
+        .card .card-title { font-weight: 600; font-size: 0.9rem; color: #fff; }
+        .card .card-title.person { color: #6C63FF; }
+        .card .card-sub { color: #888; font-size: 0.75rem; margin-top: 4px; }
+        .card .badge { position: absolute; top: 10px; right: 10px; background: rgba(108,99,255,0.85); color: #fff; padding: 3px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: 600; }
+        .card .badge.video-badge { background: rgba(255,165,0,0.85); }
+        
+        /* ===== MODAL ===== */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: #1a1a2e; border-radius: 16px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(108,99,255,0.2); padding: 30px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(108,99,255,0.15); }
+        .modal-header h2 { font-size: 1.3rem; color: #fff; }
+        .modal-header h2 span { color: #6C63FF; }
+        .modal-close { background: none; border: none; color: #888; font-size: 1.8rem; cursor: pointer; transition: color 0.3s; }
+        .modal-close:hover { color: #fff; }
+        .modal-face { display: flex; gap: 25px; margin-bottom: 25px; flex-wrap: wrap; }
+        .modal-face img { width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 2px solid #6C63FF; }
+        .modal-face .info { flex: 1; }
+        .modal-face .info p { color: #aaa; font-size: 0.9rem; margin: 5px 0; }
+        .modal-face .info strong { color: #fff; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+        .video-item { background: #0f0f1a; border-radius: 10px; overflow: hidden; border: 1px solid rgba(108,99,255,0.1); transition: all 0.3s; cursor: pointer; text-decoration: none; color: inherit; }
+        .video-item:hover { border-color: #6C63FF; transform: translateY(-3px); }
+        .video-item img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #0f0f1a; }
+        .video-item .video-name { padding: 10px 12px; font-size: 0.8rem; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+        
+        /* ===== EMPTY STATE ===== */
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; grid-column: 1/-1; }
+        .empty-state i { font-size: 4rem; display: block; margin-bottom: 15px; opacity: 0.3; }
+        .empty-state h3 { color: #aaa; margin-bottom: 8px; }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; align-items: stretch; }
+            .search-container { max-width: 100%; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .modal { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1>📸 Face Gallery</h1>
+            <div class="stats">
+                <span>👤 <strong id="personCount">0</strong> People</span>
+                <span>🎬 <strong id="videoCount">0</strong> Videos</span>
+                <span>📊 <strong id="faceCount">0</strong> Faces</span>
+            </div>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="persons">👤 Faces</button>
+                <button class="tab-btn" data-tab="videos">🎬 Videos</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="🔍 Search...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="grid" id="grid">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>👤 Person <span id="modalPersonId">0</span></h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-face">
+                <img id="modalFaceImage" src="" alt="Face">
+                <div class="info">
+                    <p><strong>Total Faces:</strong> <span id="modalFaceCount">0</span></p>
+                    <p><strong>Videos:</strong> <span id="modalVideoCount">0</span></p>
+                    <p style="font-size:0.8rem;color:#666;margin-top:10px;">Click any video to watch it</p>
+                </div>
+            </div>
+            <div class="video-grid" id="modalVideoGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // DATA
+        // ============================================
+        let galleryData = { videos: [], persons: [] };
+        let currentTab = 'persons';
+        let filteredData = [];
+
+        // ============================================
+        // FETCH DATA
+        // ============================================
+        async function fetchGallery() {
+            try {
+                const response = await fetch('/api/gallery');
+                galleryData = await response.json();
+                updateStats(galleryData);
+                renderTab(currentTab);
+            } catch (error) {
+                console.error('Error fetching gallery:', error);
+                document.getElementById('grid').innerHTML = `
+                    <div class="empty-state">
+                        <i>📂</i>
+                        <h3>No gallery data found</h3>
+                        <p>Run the gallery builder script first to process your videos.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // UPDATE STATS
+        // ============================================
+        function updateStats(data) {
+            document.getElementById('personCount').textContent = data.stats?.total_persons || 0;
+            document.getElementById('videoCount').textContent = data.stats?.total_videos || 0;
+            document.getElementById('faceCount').textContent = data.stats?.total_faces || 0;
+        }
+
+        // ============================================
+        // RENDER
+        // ============================================
+        function renderTab(tab) {
+            currentTab = tab;
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (tab === 'persons') {
+                filteredData = galleryData.persons || [];
+                if (search) {
+                    filteredData = filteredData.filter(p => 
+                        String(p.id).includes(search) || 
+                        `person ${p.id}`.includes(search)
+                    );
+                }
+                renderPersons(filteredData);
+            } else {
+                filteredData = galleryData.videos || [];
+                if (search) {
+                    filteredData = filteredData.filter(v => 
+                        v.name.toLowerCase().includes(search)
+                    );
+                }
+                renderVideos(filteredData);
+            }
+        }
+
+        function renderPersons(persons) {
+            const grid = document.getElementById('grid');
+            
+            if (!persons || persons.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><i>😕</i><h3>No faces found</h3></div>`;
+                return;
+            }
+            
+            grid.innerHTML = persons.map(p => `
+                <div class="card" onclick="openPersonModal(${p.id})">
+                    <img class="card-image" 
+                         src="/gallery_data/thumbnails/${p.thumbnail || 'default.jpg'}" 
+                         alt="Person ${p.id}"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%231a1a2e%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%236C63FF%22 font-size=%2272%22%3E👤%3C/text%3E%3C/svg%3E'">
+                    <div class="card-info">
+                        <div class="card-title person">Person #${p.id}</div>
+                        <div class="card-sub">🎬 ${p.video_count || 0} videos · 👤 ${p.face_count || 0} faces</div>
+                    </div>
+                    <div class="badge">${p.face_count || 0}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderVideos(videos) {
+            const grid = document.getElementById('grid');
+            
+            if (!videos || videos.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><i>🎬</i><h3>No videos found</h3></div>`;
+                return;
+            }
+            
+            grid.innerHTML = videos.map(v => `
+                <div class="card" onclick="playVideo('${v.name}')">
+                    <img class="card-image video-thumb" 
+                         src="/gallery_data/video_previews/${v.thumbnail || 'default_thumb.jpg'}" 
+                         alt="${v.name}"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22%3E%3Crect fill=%22%231a1a2e%22 width=%22320%22 height=%22180%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%236C63FF%22 font-size=%2248%22%3E🎬%3C/text%3E%3C/svg%3E'">
+                    <div class="card-info">
+                        <div class="card-title">${v.name}</div>
+                        <div class="card-sub">👤 ${v.faces_detected || 0} faces · 🕐 ${Math.round(v.duration || 0)}s</div>
+                    </div>
+                    <div class="badge video-badge">${v.faces_detected || 0}</div>
+                </div>
+            `).join('');
+        }
+
+        // ============================================
+        // MODAL
+        // ============================================
+        function openPersonModal(personId) {
+            const person = galleryData.persons?.find(p => p.id === personId);
+            if (!person) return;
+            
+            document.getElementById('modalPersonId').textContent = personId;
+            document.getElementById('modalFaceImage').src = `/gallery_data/thumbnails/${person.thumbnail}`;
+            document.getElementById('modalFaceCount').textContent = person.face_count || 0;
+            document.getElementById('modalVideoCount').textContent = person.video_count || 0;
+            
+            const grid = document.getElementById('modalVideoGrid');
+            const videos = person.videos || [];
+            
+            if (videos.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i>🎬</i><p>No videos for this person</p></div>`;
+            } else {
+                grid.innerHTML = videos.map(v => `
+                    <div class="video-item" onclick="playVideo('${v.name}')">
+                        <img src="/gallery_data/video_previews/${getVideoThumbnail(v.name)}" 
+                             alt="${v.name}"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22100%22%3E%3Crect fill=%22%231a1a2e%22 width=%22180%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%236C63FF%22 font-size=%2232%22%3E🎬%3C/text%3E%3C/svg%3E'">
+                        <div class="video-name">${v.name}</div>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('modalOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function getVideoThumbnail(videoName) {
+            const video = galleryData.videos?.find(v => v.name === videoName);
+            return video?.thumbnail || 'default_thumb.jpg';
+        }
+
+        function playVideo(videoName) {
+            window.open(`/videos/${encodeURIComponent(videoName)}`, '_blank');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        document.getElementById('modalClose').addEventListener('click', closeModal);
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                renderTab(this.dataset.tab);
+            });
+        });
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+            renderTab(currentTab);
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+        fetchGallery();
+    </script>
+</body>
+</html>

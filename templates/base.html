@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Face Gallery & Video Generator{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f0f1a; 
+            color: #fff; 
+            min-height: 100vh; 
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+            border-bottom: 2px solid #6C63FF;
+            padding: 12px 0;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #6C63FF, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .navbar-brand i {
+            -webkit-text-fill-color: initial;
+            color: #6C63FF;
+        }
+        .nav-link {
+            color: #aaa !important;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-radius: 8px;
+            padding: 8px 16px !important;
+        }
+        .nav-link:hover { color: #fff !important; background: rgba(108,99,255,0.1); }
+        .nav-link.active { 
+            color: #fff !important; 
+            background: rgba(108,99,255,0.2);
+        }
+        .nav-link i { margin-right: 6px; }
+        
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            color: #888;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .stats-bar span { background: rgba(108,99,255,0.1); padding: 4px 14px; border-radius: 20px; }
+        .stats-bar strong { color: #6C63FF; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .page-header {
+            padding: 20px 0 30px;
+            border-bottom: 1px solid rgba(108,99,255,0.1);
+            margin-bottom: 30px;
+        }
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .page-header h1 i { color: #6C63FF; margin-right: 10px; }
+        .page-header .lead { color: #888; font-size: 1.1rem; }
+        
+        .card {
+            background: #1a1a2e;
+            border: 1px solid rgba(108,99,255,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .card:hover { border-color: rgba(108,99,255,0.3); }
+        .card-header {
+            background: rgba(108,99,255,0.05);
+            border-bottom: 1px solid rgba(108,99,255,0.1);
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        .card-body { padding: 20px; }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6C63FF, #a78bfa);
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108,99,255,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #00B894, #55EFC4);
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,184,148,0.3);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #E17055, #FF7675);
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(225,112,85,0.3);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .media-item {
+            position: relative;
+            background: #1a1a2e;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(108,99,255,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            aspect-ratio: 1;
+        }
+        .media-item:hover {
+            border-color: rgba(108,99,255,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(108,99,255,0.12);
+        }
+        .media-item.selected {
+            border-color: #6C63FF;
+            box-shadow: 0 0 30px rgba(108,99,255,0.15);
+        }
+        .media-item img, .media-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #0f0f1a;
+        }
+        .media-item .media-checkbox {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            accent-color: #6C63FF;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .media-item:hover .media-checkbox,
+        .media-item.selected .media-checkbox {
+            opacity: 1;
+        }
+        .media-item .media-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .media-item .media-badge.image-badge {
+            background: rgba(108,99,255,0.85);
+            color: #fff;
+        }
+        .media-item .media-badge.video-badge {
+            background: rgba(255,165,0,0.85);
+            color: #fff;
+        }
+        .media-item .media-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            color: #fff;
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .media-item:hover .media-overlay { opacity: 1; }
+        
+        .selection-bar {
+            position: sticky;
+            bottom: 0;
+            background: #1a1a2e;
+            border-top: 2px solid #6C63FF;
+            padding: 16px 24px;
+            margin: 30px -20px -20px;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            z-index: 50;
+        }
+        .selection-bar .selected-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        .selection-bar .selected-info strong {
+            color: #6C63FF;
+            font-size: 1.1rem;
+        }
+        .selection-bar .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+        .selection-bar .actions button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .selection-bar .actions .btn-select-all {
+            background: rgba(108,99,255,0.15);
+            color: #6C63FF;
+            border: 1px solid rgba(108,99,255,0.15);
+        }
+        .selection-bar .actions .btn-select-all:hover {
+            background: rgba(108,99,255,0.25);
+        }
+        .selection-bar .actions .btn-clear {
+            background: rgba(220,53,69,0.15);
+            color: #dc3545;
+            border: 1px solid rgba(220,53,69,0.15);
+        }
+        .selection-bar .actions .btn-clear:hover {
+            background: rgba(220,53,69,0.25);
+        }
+        .selection-bar .actions .btn-generate {
+            background: linear-gradient(135deg, #FF6B35, #FF4500);
+            color: #fff;
+            padding: 8px 28px;
+        }
+        .selection-bar .actions .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255,69,0,0.3);
+        }
+        .selection-bar .actions .btn-generate:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            grid-column: 1/-1;
+        }
+        .empty-state i { font-size: 4rem; display: block; margin-bottom: 15px; opacity: 0.3; }
+        .empty-state h3 { color: #aaa; margin-bottom: 8px; }
+        .empty-state p { color: #555; }
+        
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1060;
+            max-width: 350px;
+        }
+        
+        .badge-template {
+            background: linear-gradient(135deg, #6C63FF, #a78bfa);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .media-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+            .selection-bar { flex-direction: column; align-items: stretch; }
+            .selection-bar .actions { margin-left: 0; justify-content: center; }
+            .stats-bar { font-size: 0.75rem; gap: 10px; }
+            .stats-bar span { padding: 2px 10px; }
+        }
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+            .media-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-film"></i> Gallery Studio
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'home' %}active{% endif %}" href="{{ url_for('index') }}">
+                            <i class="bi bi-house"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'people' %}active{% endif %}" href="{{ url_for('people_page') }}">
+                            <i class="bi bi-people"></i> People
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'templates' %}active{% endif %}" href="{{ url_for('templates_page') }}">
+                            <i class="bi bi-folder"></i> Templates
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'upload' %}active{% endif %}" href="{{ url_for('upload_page') }}">
+                            <i class="bi bi-upload"></i> Upload
+                        </a>
+                    </li>
+                </ul>
+                <div class="stats-bar">
+                    <span>👤 <strong id="personCount">0</strong></span>
+                    <span>🖼️ <strong id="mediaCount">0</strong></span>
+                    <span>📁 <strong id="templateCount">0</strong></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <script>
+        // Update stats
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/gallery');
+                const data = await response.json();
+                document.getElementById('personCount').textContent = data.stats?.total_persons || 0;
+                document.getElementById('mediaCount').textContent = data.stats?.total_media || 0;
+            } catch (e) {}
+            
+            try {
+                const response = await fetch('/api/templates');
+                const data = await response.json();
+                document.getElementById('templateCount').textContent = data.templates?.length || 0;
+            } catch (e) {}
+        }
+        
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const container = document.querySelector('.toast-container');
+            if (!container) {
+                const newContainer = document.createElement('div');
+                newContainer.className = 'toast-container';
+                document.body.appendChild(newContainer);
+            }
+            const toastContainer = document.querySelector('.toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 show`;
+            toast.role = 'alert';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', updateStats);
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

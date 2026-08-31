@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+
+{% block title %}Face Gallery - Upload{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 0;
+    }
+
+    .upload-zone {
+        border: 2px dashed #444;
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: rgba(255,255,255,0.03);
+    }
+
+    .upload-zone.dragover {
+        border-color: #6C63FF;
+        background: rgba(108,99,255,0.1);
+    }
+
+    .upload-zone .upload-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .upload-zone h3 {
+        color: #fff;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-zone p {
+        color: #888;
+        margin-bottom: 1rem;
+    }
+
+    .upload-zone .file-types {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .upload-btn {
+        background: #6C63FF;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .upload-btn:hover {
+        background: #5a52d5;
+    }
+
+    .upload-btn:disabled {
+        background: #444;
+        cursor: not-allowed;
+    }
+
+    .file-list {
+        margin-top: 2rem;
+        display: none;
+    }
+
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .file-item .file-name {
+        flex: 1;
+        margin-right: 1rem;
+        color: #ccc;
+        font-size: 0.9rem;
+    }
+
+    .file-item .file-size {
+        color: #666;
+        font-size: 0.85rem;
+        margin-right: 1rem;
+    }
+
+    .file-item .file-type-badge {
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+
+    .file-item .file-type-badge.image {
+        background: rgba(108,99,255,0.3);
+        color: #6C63FF;
+    }
+
+    .file-item .file-type-badge.video {
+        background: rgba(255,165,0,0.3);
+        color: #FFA500;
+    }
+
+    .file-item .file-type-badge.zip {
+        background: rgba(40,167,69,0.3);
+        color: #28a745;
+    }
+
+    .remove-file {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 4px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .remove-file:hover {
+        background: #c82333;
+    }
+
+    .progress-container {
+        margin-top: 2rem;
+        display: none;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #1a1a2e;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #6C63FF, #a78bfa);
+        transition: width 0.3s ease;
+        width: 0%;
+        border-radius: 10px;
+    }
+
+    .progress-text {
+        text-align: center;
+        margin-top: 0.5rem;
+        color: #888;
+    }
+
+    .upload-result {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .upload-result.success {
+        display: block;
+        background: rgba(40, 167, 69, 0.15);
+        border: 1px solid #28a745;
+    }
+
+    .upload-result.error {
+        display: block;
+        background: rgba(220, 53, 69, 0.15);
+        border: 1px solid #dc3545;
+        color: #dc3545;
+    }
+
+    .upload-result .result-title {
+        color: #fff;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .upload-result .result-title i {
+        margin-right: 8px;
+    }
+
+    .upload-result.success .result-title {
+        color: #28a745;
+    }
+
+    .upload-result .result-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .upload-result .stat {
+        background: rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 12px 16px;
+        text-align: center;
+        border: 1px solid rgba(108,99,255,0.08);
+    }
+
+    .upload-result .stat .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #6C63FF;
+    }
+
+    .upload-result .stat .stat-label {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 4px;
+    }
+
+    .upload-result .stat .stat-number.green {
+        color: #28a745;
+    }
+
+    .upload-result .stat .stat-number.orange {
+        color: #FFA500;
+    }
+
+    .upload-result .stat .stat-number.blue {
+        color: #6C63FF;
+    }
+
+    .upload-result .stat .stat-number.purple {
+        color: #a78bfa;
+    }
+
+    .upload-result .result-message {
+        margin-top: 1rem;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 6px;
+        color: #aaa;
+        font-size: 0.9rem;
+    }
+
+    .upload-result .result-message pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .upload-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .file-count {
+        color: #888;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .view-gallery-btn {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 8px 24px;
+        background: #6C63FF;
+        color: #fff;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .view-gallery-btn:hover {
+        background: #5a52d5;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <h1>📤 Upload Files</h1>
+    <p style="color:#888;">Upload images, videos, or zip files containing images and videos</p>
+
+    <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">📁</div>
+        <h3>Drop files here or click to browse</h3>
+        <p>Supports: Images (JPG, PNG, GIF, BMP, WebP) & Videos (MP4, MOV, AVI, MKV, WEBM)</p>
+        <p class="file-types">Also supports zip files (max 500MB)</p>
+        <input type="file" id="fileInput" class="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.mp4,.mov,.avi,.mkv,.webm,.zip">
+        <br>
+        <button class="upload-btn" id="uploadBtn">Select Files</button>
+    </div>
+
+    <div class="file-list" id="fileList">
+        <h3 style="color:#fff;">Selected Files</h3>
+        <div id="selectedFiles"></div>
+        <div class="file-count" id="fileCount">Total: 0 files</div>
+        <div class="upload-actions">
+            <button class="upload-btn" id="processBtn">📤 Upload & Process</button>
+            <button class="upload-btn" id="clearBtn" style="background:#dc3545;">🗑️ Clear All</button>
+        </div>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Processing...</div>
+    </div>
+
+    <div class="upload-result" id="uploadResult">
+        <div class="result-title" id="resultTitle">
+            <i class="bi bi-check-circle"></i> Upload Successful!
+        </div>
+        <div class="result-stats" id="resultStats"></div>
+        <div class="result-message" id="resultMessage">
+            <pre id="resultDetail"></pre>
+        </div>
+        <div style="text-align:center;">
+            <a href="/people" class="view-gallery-btn">👤 View People Gallery</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedFiles = [];
+
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileList = document.getElementById('fileList');
+    const selectedFilesDiv = document.getElementById('selectedFiles');
+    const fileCount = document.getElementById('fileCount');
+    const processBtn = document.getElementById('processBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const uploadResult = document.getElementById('uploadResult');
+
+    // Allowed file types
+    const allowedImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    const allowedVideoTypes = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+    const allowedZipTypes = ['zip'];
+
+    function getFileType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        if (allowedImageTypes.includes(ext)) return 'image';
+        if (allowedVideoTypes.includes(ext)) return 'video';
+        if (allowedZipTypes.includes(ext)) return 'zip';
+        return 'unknown';
+    }
+
+    function getFileTypeBadge(type) {
+        const badges = {
+            'image': '<span class="file-type-badge image">📸 Image</span>',
+            'video': '<span class="file-type-badge video">🎬 Video</span>',
+            'zip': '<span class="file-type-badge zip">📦 Zip</span>'
+        };
+        return badges[type] || '';
+    }
+
+    // Click to browse
+    uploadBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
+    });
+    
+    uploadZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    // File selection
+    fileInput.addEventListener('change', () => {
+        handleFiles(fileInput.files);
+        fileInput.value = '';
+    });
+
+    function handleFiles(files) {
+        for (let file of files) {
+            const type = getFileType(file.name);
+            if (type !== 'unknown') {
+                if (!selectedFiles.find(f => f.name === file.name && f.size === file.size)) {
+                    selectedFiles.push(file);
+                }
+            }
+        }
+        updateFileList();
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    }
+
+    function updateFileList() {
+        if (selectedFiles.length === 0) {
+            fileList.style.display = 'none';
+            return;
+        }
+
+        fileList.style.display = 'block';
+        fileCount.textContent = `Total: ${selectedFiles.length} files`;
+        
+        selectedFilesDiv.innerHTML = selectedFiles.map((file, index) => {
+            const type = getFileType(file.name);
+            return `
+                <div class="file-item">
+                    <span class="file-name">${file.name}</span>
+                    ${getFileTypeBadge(type)}
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                    <button class="remove-file" onclick="removeFile(${index})">✕</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateFileList();
+    }
+
+    clearBtn.addEventListener('click', () => {
+        selectedFiles = [];
+        updateFileList();
+        uploadResult.className = 'upload-result';
+        uploadResult.style.display = 'none';
+        progressContainer.style.display = 'none';
+    });
+
+    // Upload and process
+    processBtn.addEventListener('click', async () => {
+        if (selectedFiles.length === 0) return;
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => formData.append('files', file));
+
+        // Show progress
+        progressContainer.style.display = 'block';
+        processBtn.disabled = true;
+        uploadResult.className = 'upload-result';
+        uploadResult.style.display = 'none';
+        progressFill.style.width = '0%';
+        progressText.textContent = 'Uploading files...';
+
+        try {
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress <= 90) {
+                    progressFill.style.width = progress + '%';
+                    if (progress < 30) {
+                        progressText.textContent = 'Uploading files...';
+                    } else if (progress < 60) {
+                        progressText.textContent = 'Processing images...';
+                    } else {
+                        progressText.textContent = 'Detecting faces...';
+                    }
+                }
+            }, 500);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearInterval(progressInterval);
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Processing complete!';
+
+            const result = await response.json();
+
+            if (response.ok) {
+                uploadResult.className = 'upload-result success';
+                uploadResult.style.display = 'block';
+                
+                document.getElementById('resultTitle').innerHTML = `
+                    <i class="bi bi-check-circle"></i> ✅ Upload Successful!
+                `;
+                
+                // Get stats from response
+                const stats = result.result || {};
+                const processed = result.processed || 0;
+                
+                // Build stats display with all available data
+                let statsHTML = '';
+                
+                // Helper to add stat
+                function addStat(number, label, colorClass = 'blue') {
+                    statsHTML += `
+                        <div class="stat">
+                            <div class="stat-number ${colorClass}">${number}</div>
+                            <div class="stat-label">${label}</div>
+                        </div>
+                    `;
+                }
+                
+                // Add all stats
+                addStat(processed, 'Files Processed', 'blue');
+                addStat(stats.faces_detected || stats.total_faces || 0, 'Faces Detected', 'green');
+                addStat(stats.new_persons_created || stats.new_persons || 0, 'New Persons', 'purple');
+                addStat(stats.processed_images || 0, 'Images Processed', 'orange');
+                addStat(stats.videos_uploaded || 0, 'Videos Uploaded', 'blue');
+                
+                // Add total persons if available
+                if (stats.total_persons) {
+                    addStat(stats.total_persons, 'Total Persons', 'purple');
+                }
+                
+                // Add total faces in gallery if available
+                if (stats.total_faces) {
+                    addStat(stats.total_faces, 'Total Faces in Gallery', 'green');
+                }
+                
+                document.getElementById('resultStats').innerHTML = statsHTML;
+                
+                // Build detailed message
+                let detailText = '';
+                if (stats.faces_detected > 0) {
+                    detailText += `✅ ${stats.faces_detected} faces detected`;
+                    if (stats.new_persons_created > 0) {
+                        detailText += `, ${stats.new_persons_created} new persons created`;
+                    } else {
+                        detailText += `, matched to existing persons`;
+                    }
+                    detailText += '\n';
+                }
+                if (stats.total_persons) {
+                    detailText += `👤 Total persons in gallery: ${stats.total_persons}\n`;
+                }
+                if (stats.total_faces) {
+                    detailText += `🖼️ Total faces in gallery: ${stats.total_faces}\n`;
+                }
+                if (processed > 0) {
+                    detailText += `📁 ${processed} files processed successfully`;
+                    if (stats.processed_images > 0) {
+                        detailText += ` (${stats.processed_images} images`;
+                    }
+                    if (stats.videos_uploaded > 0) {
+                        detailText += `${stats.processed_images > 0 ? ', ' : ' ('}${stats.videos_uploaded} videos`;
+                    }
+                    if (stats.processed_images > 0 || stats.videos_uploaded > 0) {
+                        detailText += `)`;
+                    }
+                    detailText += '\n';
+                }
+                
+                document.getElementById('resultDetail').textContent = detailText || 'Processing complete!';
+                document.getElementById('resultMessage').style.display = 'block';
+
+                // Reset after success
+                selectedFiles = [];
+                updateFileList();
+                
+                // Refresh stats
+                setTimeout(() => {
+                    if (typeof updateStats === 'function') {
+                        updateStats();
+                    }
+                }, 2000);
+            } else {
+                uploadResult.className = 'upload-result error';
+                uploadResult.style.display = 'block';
+                document.getElementById('resultTitle').innerHTML = `
+                    <i class="bi bi-x-circle"></i> ❌ Upload Failed
+                `;
+                document.getElementById('resultStats').innerHTML = '';
+                document.getElementById('resultDetail').textContent = result.error || 'Something went wrong';
+                document.getElementById('resultMessage').style.display = 'block';
+            }
+        } catch (error) {
+            uploadResult.className = 'upload-result error';
+            uploadResult.style.display = 'block';
+            document.getElementById('resultTitle').innerHTML = `
+                <i class="bi bi-x-circle"></i> ❌ Upload Error
+            `;
+            document.getElementById('resultStats').innerHTML = '';
+            document.getElementById('resultDetail').textContent = error.message || 'Network error';
+            document.getElementById('resultMessage').style.display = 'block';
+        } finally {
+            processBtn.disabled = false;
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressFill.style.width = '0%';
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}
